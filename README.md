@@ -1,35 +1,41 @@
-# Indian Cricket Team Face Identification
+# Indian Cricket Team Member Face Identification
 
-Pipeline: **MTCNN** (face detect/crop) → **FaceNet** (512-d embedding, pretrained on VGGFace2) → **SVM** classifier.
-Pretrained embeddings mean you only need ~30-100 images per player and no GPU.
+A computer-vision system that identifies Indian cricket team members from a photo.
+It detects every face in an image, names each one, and shows confidence scores.
 
-## 1. Setup
-    python -m venv venv && source venv/bin/activate     # Windows: venv\Scripts\activate
-    pip install -r requirements.txt
+**Live demo:** https://huggingface.co/spaces/ruchithapr/cricket-face-identifier
 
-## 2. Get the dataset
-Search Kaggle for "Indian cricketers face dataset" / "cricket players images", or collect images yourself
-(Google Dataset Search is also an option). Arrange as (folder name = label):
+## Method
+1. **Face detection:** MTCNN
+2. **Feature extraction:** FaceNet (InceptionResnetV1, pretrained on VGGFace2), giving a 512-dimensional embedding per face
+3. **Data augmentation:** horizontal flip, brighter and darker versions (training data only)
+4. **Classification:** five classifiers compared (linear SVM, RBF SVM, Logistic Regression, KNN, Random Forest)
+5. **Evaluation:** stratified 5-fold cross-validation
 
-    dataset/
-      Virat_Kohli/   *.jpg
-      Rohit_Sharma/  *.jpg
-      MS_Dhoni/      *.jpg
+## Results
+- Players: 15
+- Best model: SVM (RBF), augmentation=Yes  ->  90.7% +/- 3.8%
+- Cross-validated accuracy: 91%
 
-With the Kaggle CLI:  `kaggle datasets download -d <owner>/<dataset> --unzip -p raw_data`
-then rename/move folders into the layout above. Tips: 5-10 players to start, 30+ images each,
-varied angles/lighting, one person per photo, remove wrong/duplicate images.
+## Screenshots
+| Model comparison | Confusion matrix |
+|---|---|
+| ![comparison](screenshots/comparision.png) | ![confusion](screenshots/confusion-matrix.png) |
 
-## 3. Train
-    python train.py --data_dir dataset
-Prints per-player precision/recall, saves `model.joblib` and `confusion_matrix.png`.
-(If you change the dataset, delete `embeddings.npz` first, since it is a cache.)
+| Single face | Multiple faces | Unrelated photo |
+|---|---|---|
+| ![single](screenshots/single_photo.png) | ![multiple](screenshots/multiple-photo.png) | ![unrelated](screenshots/unrelated.png) |
 
-## 4. Predict
-    python predict.py some_photo.jpg
-    streamlit run app.py        # web UI with upload
+## Project structure
+- `notebook/`: Google Colab notebook (training, cross-validation, comparison)
+- `huggingface_app/`: deployed web app (Gradio) and trained model
+- `report/`: project report
+- `screenshots/`: results and app screenshots
+- `train.py`, `predict.py`, `common.py`, `app.py`: earlier local version (Streamlit)
 
-## Notes
-- Faces with confidence below `--threshold` are reported as "Unknown", so non-team members aren't forced into a class.
-- Images with no detectable face are skipped during training.
-- Accuracy depends heavily on dataset cleanliness; check `confusion_matrix.png` to find confusable players.
+## Dataset
+Kaggle: "Indian Cricketers Images" (15 players). The images are not included in this repository.
+
+## Limitations
+- Recognizes only these 15 players; other people may be matched to the closest player unless the confidence threshold marks them Unknown.
+- Accuracy can drop with unusual angles, occlusion, or low resolution.
