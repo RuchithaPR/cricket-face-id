@@ -34,7 +34,7 @@ It detects every face in an image, names each one, and shows confidence scores.
 - `train.py`, `predict.py`, `common.py`, `app.py`: earlier local version (Streamlit)
 
 ## Dataset
-Kaggle: "Indian Cricketers Images" (15 players). The images are not included in this repository.
+Kaggle: "Indian Cricketers Images" (15 players). The images are included in the `images/` folder, with one sub-folder per player.
 
 ## Limitations
 - Recognizes only these 15 players; other people may be matched to the closest player unless the confidence threshold marks them Unknown.
